@@ -3,6 +3,7 @@ import tweepy
 import nltk
 import json
 import sys
+import re
 
 
 # write your code here
@@ -59,13 +60,19 @@ def tag_freq_manager(tag, tag_dict):
 def top_tags(tag_dict, x_top):
 	top_dict = {}
 	output_str = ""
+	iter_tracker = 0
+	sorted_dict = sorted(tag_dict.items(), key=lambda x: (-x[1], x[0][0]))
 
-	for x in range(x_top):
-		if tag_dict:
-			top_tag = max(tag_dict, key=tag_dict.get)
-			top_dict[top_tag] = tag_dict[top_tag]
-			del tag_dict[top_tag]
-			output_str += top_tag + "(" + str(top_dict[top_tag]) + ") " 
+	while iter_tracker < x_top and sorted_dict:
+		top_tag = sorted_dict[0]
+
+		if re.match(r'[a-zA-Z]+', top_tag[0]):
+			top_dict[top_tag[0]] = top_tag[1]
+			output_str += top_tag[0] + "(" + str(top_tag[1]) + ") " 
+			iter_tracker += 1
+			sorted_dict.remove(top_tag)
+		else:
+			sorted_dict.remove(top_tag)
 
 	return (top_dict, output_str)
 
@@ -106,7 +113,7 @@ for tweet in timeline:
 
 	all_text.append(text.split())
 
-retweets(timeline, originals) # Double-check results
+# retweets(timeline, originals) # Double-check results
 
 
 # Get the total favorites and retweets
@@ -130,6 +137,9 @@ for line in all_text:
 
 		append_flag = True
 
+		if not re.search(r'[a-zA-Z]+', word):
+			append_flag = False
+
 		if word in stopwords:
 			append_flag = False
 
@@ -142,7 +152,6 @@ for line in all_text:
 
 tagset = nltk.pos_tag(nltk.tokenize.word_tokenize(all_words))
 
-
 vb_dict = {} # Verb dict
 nn_dict = {} # Noun dict
 jj_dict = {} # Adjective dict
@@ -152,6 +161,7 @@ top_noun = "" # Most common noun
 top_adj = "" # Most common adjective
 
 for tag in tagset:
+
 	if tag[1][:2] == 'VB':
 		tag_freq_manager(tag[0], vb_dict)
 	elif tag[1][:2] == 'NN':
